@@ -33,7 +33,7 @@ ludus:
       snapshot: false
       block_internet: false
     roles:
-      - hugojcqs.ludus_exegol
+      - ludus_exegol
     role_vars:
       image_to_install: "ad"
 ```

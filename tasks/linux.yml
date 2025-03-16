@@ -1,98 +1,104 @@
-- name: Ensure system is prepared for Exegol installation
-  block:
-    - name: Install prerequisite packages
-      ansible.builtin.apt:
-        name:
-          - curl
-          - git
-          - python3
-          - python3-pip
-          - python3-venv
-          - pipx
-          - python3-argcomplete
-        state: present
-        update_cache: yes
-      become: true
-
-    - name: Validate Exegol image selection
-      ansible.builtin.assert:
-        that:
-          - image_to_install | default('') in ['full', 'ad', 'web', 'light', 'osint', 'nightly']
-        fail_msg: "Invalid Exegol image. Choose from: full, ad, web, light, osint, nightly"
-      when: image_to_install is defined
+---
+- name: Install prerequisites
+  apt:
+    name:
+      - curl
+      - git
+      - python3
+      - python3-pip
+      - python3-venv
+      - pipx
+      - python3-argcomplete
+      - gnupg
+      - ca-certificates
+    state: present
+    update_cache: yes
 
 - name: Install Docker
   block:
-    - name: Download and execute Docker installation script
-      ansible.builtin.shell: 
-        cmd: curl -fsSL https://get.docker.com/ | sh
-        creates: /usr/bin/docker
-      become: true
+    - name: Create keyring directory
+      file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
 
-    - name: Add user to Docker group
-      ansible.builtin.user:
+    - name: Download Docker GPG key
+      get_url:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        dest: /tmp/docker.gpg
+        mode: '0644'
+
+    - name: Install Docker GPG key
+      shell: gpg --dearmor < /tmp/docker.gpg > /etc/apt/keyrings/docker.gpg
+      args:
+        creates: /etc/apt/keyrings/docker.gpg
+
+    - name: Set permissions on Docker GPG key
+      file:
+        path: /etc/apt/keyrings/docker.gpg
+        mode: '0644'
+
+    - name: Add Docker repository
+      apt_repository:
+        repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} stable"
+        state: present
+        filename: docker
+
+    - name: Install Docker packages
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+        state: present
+        update_cache: yes
+
+    - name: Create docker group if it doesn't exist
+      group:
+        name: docker
+        state: present
+
+    - name: Add user to docker group
+      user:
         name: "{{ ansible_user }}"
         groups: docker
         append: yes
-      become: true
 
-    - name: Ensure Docker service is started
-      ansible.builtin.systemd:
+    - name: Enable and start Docker service
+      systemd:
         name: docker
-        enabled: yes
         state: started
-      become: true
+        enabled: yes
 
-- name: Configure Exegol Installation
+- name: Install Exegol
   block:
-    - name: Determine user's home directory
-      ansible.builtin.command: "echo ~{{ ansible_user }}"
+    - name: Get user home directory
+      shell: echo ~{{ ansible_user }}
       register: user_home
       changed_when: false
+      become: false
 
     - name: Install Exegol via pipx
-      ansible.builtin.shell: 
-        cmd: "pipx install exegol"
+      shell: pipx install exegol
+      args:
         creates: "{{ user_home.stdout }}/.local/bin/exegol"
-      become: true
       become_user: "{{ ansible_user }}"
-
-    - name: Ensure pipx path is configured
-      ansible.builtin.shell: 
-        cmd: "pipx ensurepath"
       become: true
+
+    - name: Add Exegol to PATH
+      shell: pipx ensurepath
       become_user: "{{ ansible_user }}"
-
-    - name: Configure Exegol sudo alias
-      ansible.builtin.lineinfile:
-        path: "{{ user_home.stdout }}/.bash_aliases"
-        line: "alias exegol='sudo -E $(which exegol)'"
-        create: yes
       become: true
-      become_user: "{{ ansible_user }}"
 
-    - name: Configure Exegol auto-completion
-      ansible.builtin.shell: 
-        cmd: "register-python-argcomplete --no-defaults exegol | sudo tee /etc/bash_completion.d/exegol > /dev/null"
-      become: true
+    - name: Set up Exegol auto-completion
+      shell: register-python-argcomplete --no-defaults exegol > /etc/bash_completion.d/exegol
       args:
         creates: /etc/bash_completion.d/exegol
 
-- name: Install Exegol Image
-  block:
-    - name: Install Exegol image using pipx run
-      ansible.builtin.shell: 
-        cmd: "yes | pipx run exegol install {{ image_to_install }}"
-      become: true
+- name: Install Exegol image
+  block:        
+    - name: Install specified Exegol image
+      shell: "yes | sudo {{ user_home.stdout }}/.local/bin/exegol install {{ image_to_install }}"
       become_user: "{{ ansible_user }}"
-      when: 
-        - image_to_install is defined
-        - image_to_install | length > 0
-
-    - name: Verify Exegol installation
-      ansible.builtin.command: "pipx run exegol version"
-      register: exegol_version
-      changed_when: false
-      failed_when: false
       become: true
-      become_user: "{{ ansible_user }}"
+      when: image_to_install is defined and image_to_install | length > 0
