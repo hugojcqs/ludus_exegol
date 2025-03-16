@@ -1,10 +1,10 @@
 # Ansible Role: Exegol  ([Ludus](https://ludus.cloud))
 
-An Ansible role that installs Exegol on a Debian or Ubuntu machine.
+An Ansible role that installs [Exegol](https://exegol.readthedocs.io/en/latest/the-exegol-project/python-wrapper.html) on a Debian or Ubuntu machine.
 
 
 ## Requirements
-- You need to supply a valid Exegol image name for this to be successful.
+- You need to supply a valid Exegol [image](https://exegol.readthedocs.io/en/latest/the-exegol-project/docker-images.html) name for this to be successful.
 
 ## Role Variables
 
@@ -40,9 +40,11 @@ ludus:
 
 ## Why exegol ?
 
-Exegol is a Docker-based penetration testing platform designed to create isolated, reproducible, and customizable environments for security assessments. It is one of my go-to environments for internal pentesting, as it provides the latest security tools, ensures a reproducible setup for clients, and simplifies the deployment of segregated environments for multiple clients.
+Exegol is a Docker-based penetration testing platform designed to create isolated, reproducible, and customizable environments for security assessments. It is one of my go-to environments for internal pentesting, as it provides the latest [security tools](https://exegol.readthedocs.io/en/latest/exegol-image/tools.html) and ensures a [reproducible](https://hub.docker.com/r/nwodtuhs/exegol/tags) setup for clients.
 
-Exegol maintains a common baseline that can be centrally upgraded to meet the team's needs, ensuring consistency and efficiency across all users.
+Unlike Kali, it relies on Docker, allowing the creation of fully segregated environments for different clients without the need to duplicate entire Kali machines. This makes it easy to deploy and manage multiple testing environments efficiently.
+
+Exegol also maintains a common baseline that can be centrally upgraded to meet the team's needs, ensuring consistency and efficiency across all users.
 
 **Skeptic?** Give it a go in Ludus. Exegol is packed with useful features :smirk: 
 
