@@ -97,7 +97,18 @@
 
 - name: Install Exegol image
   block:
-    - name: Install Exegol free image
-      shell: "echo -e 'y\nN\ny' | sudo {{ user_home.stdout }}/.local/bin/exegol install free"
-      become_user: "{{ ansible_user }}"
+    - name: Ensure pexpect is present
+      ansible.builtin.apt:
+        name: python3-pexpect
+        state: present
+
+    - name: Install Exegol (free)
+      ansible.builtin.expect:
+        command: /home/debian/.local/bin/exegol install free
+        responses:
+          "accepted the EULA": "Y"
+          "display EULA here": "N"
+          "activate your Exegol subscription": "N"
+          "not \\*that\\* kind of person": "Y"
+        timeout: 600
       become: true
