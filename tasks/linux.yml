@@ -96,9 +96,8 @@
         creates: /etc/bash_completion.d/exegol
 
 - name: Install Exegol image
-  block:        
-    - name: Install specified Exegol image
-      shell: "yes | sudo {{ user_home.stdout }}/.local/bin/exegol install {{ image_to_install }}"
+  block:
+    - name: Install Exegol free image
+      shell: "echo -e 'y\nN\ny' | sudo {{ user_home.stdout }}/.local/bin/exegol install free"
       become_user: "{{ ansible_user }}"
       become: true
-      when: image_to_install is defined and image_to_install | length > 0
