@@ -3,6 +3,13 @@
 An Ansible role that installs [Exegol](https://docs.exegol.com/) *free* on a Debian based machines.
 Quite useful when some operations cannot be performed over the WireGuard VPN and require an offensive machine in the range.
 
+## Installation
+
+```bash
+git clone https://github.com/hugojcqs/ludus_exegol
+ludus ansible role add -d ludus_exegol
+```
+
 ## Dependencies
 
 None.
